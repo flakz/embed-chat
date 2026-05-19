@@ -177,9 +177,6 @@ const mdStyles = `
 .marno-md ul { list-style: disc; }
 .marno-md ol { list-style: decimal; }
 .marno-md strong { font-weight: 600; }
-#marno-widget-root, #marno-widget-root * {
-  font-family: 'Karla', ui-sans-serif, system-ui, sans-serif !important;
-}
 `;
 
 function ChatWidget() {
@@ -367,7 +364,12 @@ function mount() {
   fontLink.href = "https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&display=swap";
   document.head.appendChild(fontLink);
 
+  const fontOverride = document.createElement("style");
+  fontOverride.textContent = "#marno-widget-root, #marno-widget-root * { font-family: 'Karla', ui-sans-serif, system-ui, sans-serif !important; }";
+  document.head.appendChild(fontOverride);
+
   const root = document.createElement("div");
+  root.id = "marno-widget-root";
   document.body.appendChild(root);
   createRoot(root).render(React.createElement(ChatWidget));
 }
