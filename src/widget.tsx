@@ -132,16 +132,8 @@ const ss: Record<string, React.CSSProperties> = {
   },
   inputWrap: {
     position: "absolute" as const, bottom: 0, left: 0, right: 0,
-    padding: "16px 16px 16px",
-    pointerEvents: "none" as const,
-  },
-  inputFade: {
-    position: "absolute" as const, bottom: "100%", left: 0, right: 0,
-    height: 30,
-    backdropFilter: "blur(8px)",
-    WebkitBackdropFilter: "blur(8px)",
-    maskImage: "linear-gradient(to top, black, black 50%, transparent)",
-    WebkitMaskImage: "linear-gradient(to top, black, black 50%, transparent)",
+    padding: "44px 16px 16px",
+    background: "linear-gradient(to top, #fff 0%, rgba(255,255,255,0.95) 40%, transparent 100%)",
     pointerEvents: "none" as const,
   },
   inputBar: {
@@ -340,7 +332,6 @@ function ChatWidget() {
               </div>
 
               <div style={ss.inputWrap}>
-                <div style={ss.inputFade} />
                 <div style={ss.inputBar}>
                   <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} placeholder="Message..." disabled={isLoading} style={ss.input} />
                   <button onClick={() => handleSend()} disabled={isInputEmpty || isLoading} style={ss.sendBtn(!isInputEmpty && !isLoading)}><ArrowUp size={18} strokeWidth={2.5} /></button>
