@@ -133,7 +133,9 @@ const ss: Record<string, React.CSSProperties> = {
   inputWrap: {
     position: "absolute" as const, bottom: 0, left: 0, right: 0,
     padding: "44px 16px 16px",
-    background: "linear-gradient(to top, #fff 0%, rgba(255,255,255,0.95) 40%, transparent 100%)",
+    background: "linear-gradient(to top, #fff 0%, rgba(255,255,255,0.8) 40%, transparent 100%)",
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
     pointerEvents: "none" as const,
   },
   inputBar: {
