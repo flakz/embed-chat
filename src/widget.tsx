@@ -64,7 +64,7 @@ const ss: Record<string, React.CSSProperties> = {
   },
   panel: {
     position: "fixed",
-    bottom: 72,
+    bottom: 74,
     right: 24,
     zIndex: 2147483647,
     width: 400,
