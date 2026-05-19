@@ -25,6 +25,21 @@ const BRAND_LOGO = window.MarnoChatConfig?.brandLogo || "";
 const PRIMARY_COLOR = window.MarnoChatConfig?.primaryColor || "#0D72FF";
 const TOGGLE_ICON = window.MarnoChatConfig?.toggleIcon || "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg";
 
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  return "#" + [r, g, b].map((x) => Math.round(x).toString(16).padStart(2, "0")).join("");
+}
+const [pr, pg, pb] = hexToRgb(PRIMARY_COLOR);
+// Blend primary with white at 10% opacity for the light tint (matches the source's aesthetic)
+const PRIMARY_LIGHT = rgbToHex(
+  pr + (255 - pr) * 0.90,
+  pg + (255 - pg) * 0.90,
+  pb + (255 - pb) * 0.90,
+);
+
 const WEBHOOK_URL = window.MarnoChatConfig?.webhookUrl || "https://n8n.marno.pro/webhook/marno-chat";
 const KB_SLUG = window.MarnoChatConfig?.kbSlug || "kbase";
 
@@ -108,7 +123,7 @@ const ss: Record<string, React.CSSProperties> = {
   },
   suggestions: { display: "flex", flexWrap: "wrap" as const, gap: 8, marginTop: 8, width: "100%" },
   suggestBtn: {
-    background: "#EBF5FF", color: PRIMARY_COLOR, border: "none",
+    background: PRIMARY_LIGHT, color: PRIMARY_COLOR, border: "none",
     borderRadius: 10, padding: "8px 14px", fontSize: 14.5, fontWeight: 500,
     cursor: "pointer", fontFamily: "inherit",
     outline: "none",
