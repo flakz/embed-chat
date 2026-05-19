@@ -245,9 +245,6 @@ function ChatWidget() {
               </div>
 
               <div style={ss.msgArea}>
-                <div style={ss.subtitle}>
-                  <p style={ss.subtitleText}>Demo use free providers, expect slower replies.</p>
-                </div>
                 <div style={ss.msgList}>
                   <AnimatePresence mode="popLayout" initial={true}>
                     {messages.map((msg, index) => {
