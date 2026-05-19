@@ -146,6 +146,7 @@ const ss: Record<string, React.CSSProperties> = {
 };
 
 const mdStyles = `
+@keyframes marno-spin { to { transform: rotate(360deg); } }
 .marno-md p { margin: 0; }
 .marno-md p:not(:last-child) { margin-bottom: 12px; }
 .marno-md ul, .marno-md ol { margin: 8px 0; padding-left: 20px; }
@@ -285,7 +286,7 @@ function ChatWidget() {
 
                     {isLoading && (
                       <motion.div layout key="loading-indicator" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }} transition={{ duration: 0.3, ease: "easeOut" }} style={{ marginTop: 12 }}>
-                        <div style={ss.thinking}><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /><span>Thinking...</span></div>
+                        <div style={ss.thinking}><Loader2 size={16} style={{ animation: "marno-spin 1s linear infinite", color: "#6b7280" }} /><span>Thinking...</span></div>
                       </motion.div>
                     )}
 
