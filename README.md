@@ -26,7 +26,7 @@ Embeddable chat widget for n8n webhooks. One script tag, one config object — n
     ],
   };
 </script>
-<script src="https://marno-embed.vercel.app/marno-chat-widget.js"></script>
+<script src="https://your-app.vercel.app/marno-chat-widget.js"></script>
 ```
 
 ### How clients customize
