@@ -10,11 +10,20 @@ declare global {
     MarnoChatConfig?: {
       webhookUrl?: string;
       kbSlug?: string;
+      brandName?: string;
+      brandLogo?: string;
+      primaryColor?: string;
+      toggleIcon?: string;
       suggestions?: { label: string; prompt: string }[];
       greetings?: [string, string];
     };
   }
 }
+
+const BRAND_NAME = window.MarnoChatConfig?.brandName || "Marno AI";
+const BRAND_LOGO = window.MarnoChatConfig?.brandLogo || "";
+const PRIMARY_COLOR = window.MarnoChatConfig?.primaryColor || "#0D72FF";
+const TOGGLE_ICON = window.MarnoChatConfig?.toggleIcon || "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg";
 
 const WEBHOOK_URL = window.MarnoChatConfig?.webhookUrl || "https://n8n.marno.pro/webhook/marno-chat";
 const KB_SLUG = window.MarnoChatConfig?.kbSlug || "kbase";
@@ -56,7 +65,7 @@ const ss: Record<string, React.CSSProperties> = {
     fontFamily: "'Karla', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
   header: {
-    background: "#0D72FF",
+    background: PRIMARY_COLOR,
     color: "#fff",
     padding: "14px 16px",
     display: "flex",
@@ -84,7 +93,7 @@ const ss: Record<string, React.CSSProperties> = {
   bubbleUser: {
     padding: "8px 16px", borderRadius: 12, borderBottomRightRadius: 4,
     fontSize: 15, width: "fit-content" as const, maxWidth: "88%", lineHeight: 1.375,
-    background: "#0D72FF", color: "#fff", overflow: "hidden",
+    background: PRIMARY_COLOR, color: "#fff", overflow: "hidden",
   },
   bubbleBot: {
     padding: "8px 16px", borderRadius: 12, borderBottomLeftRadius: 4,
@@ -99,7 +108,7 @@ const ss: Record<string, React.CSSProperties> = {
   },
   suggestions: { display: "flex", flexWrap: "wrap" as const, gap: 8, marginTop: 8, width: "100%" },
   suggestBtn: {
-    background: "#EBF5FF", color: "#0D72FF", border: "none",
+    background: "#EBF5FF", color: PRIMARY_COLOR, border: "none",
     borderRadius: 10, padding: "8px 14px", fontSize: 14.5, fontWeight: 500,
     cursor: "pointer", fontFamily: "inherit",
     outline: "none",
@@ -125,7 +134,7 @@ const ss: Record<string, React.CSSProperties> = {
     position: "absolute" as const, top: "50%", transform: "translateY(-50%)", right: 5,
     width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
     border: "none", cursor: active ? "pointer" : "not-allowed",
-    background: active ? "#0D72FF" : "#E5E5E5", color: active ? "#fff" : "#8C8C8C",
+    background: active ? PRIMARY_COLOR : "#E5E5E5", color: active ? "#fff" : "#8C8C8C",
     fontFamily: "inherit",
     outline: "none",
   }),
@@ -232,11 +241,15 @@ function ChatWidget() {
               <div style={ss.header}>
                 <div style={ss.headerLeft}>
                   <div style={ss.logoCircle}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: "translateY(1px)" }}>
-                      <path d="M4 17V10A4 4 0 0 1 12 10V17M12 17V10A4 4 0 0 1 20 10V17" />
-                    </svg>
+                    {BRAND_LOGO ? (
+                      <img src={BRAND_LOGO} alt={BRAND_NAME} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: "translateY(1px)" }}>
+                        <path d="M4 17V10A4 4 0 0 1 12 10V17M12 17V10A4 4 0 0 1 20 10V17" />
+                      </svg>
+                    )}
                   </div>
-                  <span style={ss.headerTitle}>Marno AI</span>
+                  <span style={ss.headerTitle}>{BRAND_NAME}</span>
                 </div>
                 <div style={ss.headerActions}>
                   <button onClick={handleReset} style={ss.headerBtn} title="Reset chat"><RotateCw size={18} strokeWidth={2.5} /></button>
@@ -324,7 +337,7 @@ function ChatWidget() {
           boxShadow: toggleHover ? "0 6px 20px rgba(0,0,0,0.35)" : "0 4px 12px rgba(0,0,0,0.25)",
         }}
       >
-        <img src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg" alt="Chat" style={ss.toggleImg} />
+        <img src={TOGGLE_ICON} alt="Chat" style={ss.toggleImg} />
       </button>
     </>
   );
