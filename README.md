@@ -8,43 +8,43 @@ Embeddable chat widget for n8n webhooks. One script tag, one config object — n
 <script>
   window.MarnoChatConfig = {
     webhookUrl: "https://your-n8n.com/webhook/chat",
-    brandName: "Your Brand",
-    brandLogo: "https://your-site.com/logo.png",
-    primaryColor: "#0D72FF",
+    kbSlug: "glaucom",
+    brandName: "Marno AI",
+    brandLogo: "https://cdn.pfps.gg/pfps/63901-mark-grayson.png",
+    primaryColor: "#fb2b71",
+    toggleIcon: "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg",
     suggestions: [
-      { label: "Get started", prompt: "How do I get started?" },
-      { label: "Pricing", prompt: "What are the pricing plans?" },
+      { label: "Get started", prompt: "How do I get started with the platform?" },
+      { label: "See templates", prompt: "Can you show me the available templates?" },
+      { label: "Pricing", prompt: "What are the pricing plans available?" },
+      { label: "Book a demo", prompt: "I would like to book a demo." },
+      { label: "Documentation", prompt: "Where can I find the API documentation?" },
     ],
     greetings: [
-      "Hi! I'm an AI assistant.",
-      "How can I help you today?"
+      "Hi there! I'm an AI agent trained on docs, help articles, and other important content.",
+      "How can I best help you today?",
     ],
-    subtitle: "We typically reply within a minute",
-    poweredBy: "Powered by Your Brand",
-    poweredByUrl: "https://your-site.com"
   };
 </script>
-<script src="https://your-app.vercel.app/marno-chat-widget.js"></script>
+<script src="https://marno-embed.vercel.app/marno-chat-widget.js"></script>
 ```
 
 ### How clients customize
 
-Everything they need to change is in `window.MarnoChatConfig`. No env vars, no build step for them. They write their own texts, colors, logo URL, and webhook URL right in the config object. The widget has defaults for everything, so they only override what they want.
+Everything they need to change is in `window.MarnoChatConfig`. No env vars, no build step. They write their own texts, colors, logo URL, and webhook URL in the config object. All values are optional — the widget has sensible defaults for everything.
 
 ## Config Reference
 
-| Key | Type | Default |
-|---|---|---|
-| `webhookUrl` | string | n8n demo URL |
-| `kbSlug` | string | `"kbase"` |
-| `brandName` | string | `"Marno AI"` |
-| `brandLogo` | string | default icon |
-| `primaryColor` | string | `"#0D72FF"` |
-| `suggestions` | `{label, prompt}[]` | 4 defaults |
-| `greetings` | `[string, string]` | 2 defaults |
-| `subtitle` | string | `""` |
-| `poweredBy` | string | `"Powered by Marno AI"` |
-| `poweredByUrl` | string | `"https://marno.ai"` |
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `webhookUrl` | string | n8n demo URL | n8n webhook endpoint |
+| `kbSlug` | string | `"kbase"` | Knowledge base slug passed in requests |
+| `brandName` | string | `"Marno AI"` | Name shown in chat header |
+| `brandLogo` | string | default M icon | Image URL for header logo |
+| `primaryColor` | string | `"#0D72FF"` | Header, user bubbles, send button, suggestion colors |
+| `toggleIcon` | string | green avatar | Image URL for floating chat button |
+| `suggestions` | `{label, prompt}[]` | 5 defaults | Any number of suggestion chips |
+| `greetings` | `[string, string]` | 2 defaults | Welcome messages on first open |
 
 ## Webhook Contract
 
@@ -55,7 +55,6 @@ Expects `{ response: "..." }` in return (Markdown supported).
 
 ```bash
 npm install
-npm run dev     # Vite dev with HMR, serves the demo page
 npm run build   # → dist/marno-chat-widget.js
 ```
 
