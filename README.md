@@ -13,6 +13,7 @@ Embeddable chat widget for n8n webhooks. One script tag, one config object — n
     brandLogo: "https://cdn.pfps.gg/pfps/63901-mark-grayson.png",
     primaryColor: "#fb2b71",
     toggleIcon: "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg",
+    fontFamily: "Karla",
     suggestions: [
       { label: "Get started", prompt: "How do I get started with the platform?" },
       { label: "See templates", prompt: "Can you show me the available templates?" },
@@ -43,6 +44,7 @@ Everything they need to change is in `window.MarnoChatConfig`. No env vars, no b
 | `brandLogo` | string | default M icon | Image URL for header logo |
 | `primaryColor` | string | `"#0D72FF"` | Header, user bubbles, send button, suggestion colors |
 | `toggleIcon` | string | green avatar | Image URL for floating chat button |
+| `fontFamily` | string | `"Karla"` | Google Font name (e.g. `"Inter"`, `"DM Sans"`) |
 | `suggestions` | `{label, prompt}[]` | 5 defaults | Any number of suggestion chips |
 | `greetings` | `[string, string]` | 2 defaults | Welcome messages on first open |
 
