@@ -137,7 +137,7 @@ const ss: Record<string, React.CSSProperties> = {
   },
   inputFade: {
     position: "absolute" as const, bottom: "100%", left: 0, right: 0,
-    height: 44,
+    height: 30,
     backdropFilter: "blur(8px)",
     WebkitBackdropFilter: "blur(8px)",
     maskImage: "linear-gradient(to top, black, black 50%, transparent)",
