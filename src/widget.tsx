@@ -14,6 +14,7 @@ declare global {
       brandLogo?: string;
       primaryColor?: string;
       toggleIcon?: string;
+      fontFamily?: string;
       suggestions?: { label: string; prompt: string }[];
       greetings?: [string, string];
     };
@@ -24,6 +25,7 @@ const BRAND_NAME = window.MarnoChatConfig?.brandName || "Marno AI";
 const BRAND_LOGO = window.MarnoChatConfig?.brandLogo || "";
 const PRIMARY_COLOR = window.MarnoChatConfig?.primaryColor || "#0D72FF";
 const TOGGLE_ICON = window.MarnoChatConfig?.toggleIcon || "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg";
+const FONT_FAMILY = window.MarnoChatConfig?.fontFamily || "Karla";
 
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
@@ -361,11 +363,11 @@ function ChatWidget() {
 function mount() {
   const fontLink = document.createElement("link");
   fontLink.rel = "stylesheet";
-  fontLink.href = "https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&display=swap";
+  fontLink.href = `https://fonts.googleapis.com/css2?family=${FONT_FAMILY.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
   document.head.appendChild(fontLink);
 
   const fontOverride = document.createElement("style");
-  fontOverride.textContent = "#marno-widget-root, #marno-widget-root * { font-family: 'Karla', ui-sans-serif, system-ui, sans-serif !important; }";
+  fontOverride.textContent = `#marno-widget-root, #marno-widget-root * { font-family: "${FONT_FAMILY}", ui-sans-serif, system-ui, sans-serif !important; }`;
   document.head.appendChild(fontOverride);
 
   const root = document.createElement("div");
