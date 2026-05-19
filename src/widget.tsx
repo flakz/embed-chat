@@ -135,8 +135,8 @@ const ss: Record<string, React.CSSProperties> = {
     padding: "44px 16px 16px",
     backdropFilter: "blur(8px)",
     WebkitBackdropFilter: "blur(8px)",
-    maskImage: "linear-gradient(to top, black, black 60%, transparent)",
-    WebkitMaskImage: "linear-gradient(to top, black, black 60%, transparent)",
+    maskImage: "linear-gradient(to top, black, black 50%, transparent)",
+    WebkitMaskImage: "linear-gradient(to top, black, black 50%, transparent)",
     pointerEvents: "none" as const,
   },
   inputBar: {
