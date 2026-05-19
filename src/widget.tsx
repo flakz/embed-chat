@@ -132,7 +132,7 @@ const ss: Record<string, React.CSSProperties> = {
   },
   inputWrap: {
     position: "absolute" as const, bottom: 0, left: 0, right: 0,
-    padding: "36px 16px 16px",
+    padding: "44px 16px 16px",
     backdropFilter: "blur(8px)",
     WebkitBackdropFilter: "blur(8px)",
     maskImage: "linear-gradient(to top, black, black 60%, transparent)",
