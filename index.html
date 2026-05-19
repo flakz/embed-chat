@@ -47,7 +47,23 @@
 
   <script>
     window.MarnoChatConfig = {
-      webhookUrl: "https://n8n.marno.pro/webhook/marno-chat",
+      webhookUrl: "https://your-n8n.com/webhook/chat",
+      kbSlug: "glaucom",
+      brandName: "Marno AI",
+      brandLogo: "https://cdn.pfps.gg/pfps/63901-mark-grayson.png",
+      primaryColor: "#fb2b71",
+      toggleIcon: "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg",
+      suggestions: [
+        { label: "Get started", prompt: "How do I get started with the platform?" },
+        { label: "See templates", prompt: "Can you show me the available templates?" },
+        { label: "Pricing", prompt: "What are the pricing plans available?" },
+        { label: "Book a demo", prompt: "I would like to book a demo." },
+        { label: "Documentation", prompt: "Where can I find the API documentation?" },
+      ],
+      greetings: [
+        "Hi there! I'm an AI agent trained on docs, help articles, and other important content.",
+        "How can I best help you today?",
+      ],
     };
   </script>
   <script src="/marno-chat-widget.js"></script>
