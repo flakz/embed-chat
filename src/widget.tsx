@@ -5,576 +5,340 @@ import { AnimatePresence, motion } from "motion/react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 
-// ── Config (read from window.MarnoChatConfig or global defaults) ───────
-
 declare global {
   interface Window {
-    MarnoChatConfig?: MarnoConfig;
-    __marnoWidgetMount?: HTMLDivElement;
+    MarnoChatConfig?: {
+      webhookUrl?: string;
+      kbSlug?: string;
+      suggestions?: { label: string; prompt: string }[];
+      greetings?: [string, string];
+    };
   }
 }
 
-interface MarnoConfig {
-  webhookUrl?: string;
-  kbSlug?: string;
-  brandName?: string;
-  brandLogo?: string;
-  primaryColor?: string;
-  suggestions?: { label: string; prompt: string }[];
-  greetings?: [string, string];
-  poweredBy?: string;
-  poweredByUrl?: string;
-  subtitle?: string;
-}
+const WEBHOOK_URL = window.MarnoChatConfig?.webhookUrl || "https://n8n.marno.pro/webhook/marno-chat";
+const KB_SLUG = window.MarnoChatConfig?.kbSlug || "kbase";
 
-const cfg: Required<MarnoConfig> = {
-  webhookUrl: window.MarnoChatConfig?.webhookUrl || "https://n8n.marno.pro/webhook/marno-chat",
-  kbSlug: window.MarnoChatConfig?.kbSlug || "kbase",
-  brandName: window.MarnoChatConfig?.brandName || "Marno AI",
-  brandLogo: window.MarnoChatConfig?.brandLogo || "",
-  primaryColor: window.MarnoChatConfig?.primaryColor || "#0D72FF",
-  suggestions: window.MarnoChatConfig?.suggestions || [
-    { label: "Get started", prompt: "How do I get started with the platform?" },
-    { label: "See templates", prompt: "Can you show me the available templates?" },
-    { label: "Pricing", prompt: "What are the pricing plans available?" },
-    { label: "Book a demo", prompt: "I would like to book a demo." },
-    { label: "Documentation", prompt: "Where can I find the API documentation?" },
-  ],
-  greetings: window.MarnoChatConfig?.greetings || [
-    "Hi there! I'm an AI agent trained on docs, help articles, and other important content.",
-    "How can I best help you today?",
-  ],
-  poweredBy: window.MarnoChatConfig?.poweredBy || "Powered by Marno AI",
-  poweredByUrl: window.MarnoChatConfig?.poweredByUrl || "https://marno.ai",
-  subtitle: window.MarnoChatConfig?.subtitle || "",
-};
+const SUGGESTIONS = window.MarnoChatConfig?.suggestions || [
+  { label: "Get started", prompt: "How do I get started with the platform?" },
+  { label: "See templates", prompt: "Can you show me the available templates?" },
+  { label: "Pricing", prompt: "What are the pricing plans available?" },
+  { label: "Book a demo", prompt: "I would like to book a demo." },
+  { label: "Documentation", prompt: "Where can I find the API documentation?" },
+];
 
-// ── Cached fetch interceptor (for demo/fallback) ──────────────────────
-
-if (!window.MarnoChatConfig?.webhookUrl) {
-  const origFetch = window.fetch.bind(window);
-  window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
-    try {
-      const body = JSON.parse(init?.body as string || "{}");
-      const query: string = (Array.isArray(body) ? body[0]?.chatInput : body?.chatInput) || "";
-      if (query) {
-        const fakeOutput = "This is a demo response. Set `webhookUrl` in your config to connect to a real n8n workflow.";
-        const resp = new Response(JSON.stringify({ response: fakeOutput }), { status: 200, headers: { "Content-Type": "application/json" } });
-        return Promise.resolve(resp);
-      }
-    } catch { /* pass */ }
-    return origFetch(input, init);
-  };
-}
-
-// ── Types ──────────────────────────────────────────────────────────────
+const GREETING_1 = window.MarnoChatConfig?.greetings?.[0] || "Hi there! I'm an AI agent trained on docs, help articles, and other important content.";
+const GREETING_2 = window.MarnoChatConfig?.greetings?.[1] || "How can I best help you today?";
 
 type Message = { id: string; role: "user" | "model" | "system"; text: string };
 
-// ── Styles (injected) ──────────────────────────────────────────────────
+const ss: Record<string, React.CSSProperties> = {
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 2147483646,
+  },
+  panel: {
+    position: "fixed",
+    bottom: 96,
+    right: 24,
+    zIndex: 2147483647,
+    width: 400,
+    height: 720,
+    maxHeight: "calc(100vh - 8rem)",
+    background: "#fff",
+    borderRadius: 24,
+    boxShadow: "0 12px 48px rgba(0,0,0,0.12)",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    border: "1px solid #f3f4f6",
+    fontFamily: "'Karla', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  },
+  header: {
+    background: "#0D72FF",
+    color: "#fff",
+    padding: "14px 16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexShrink: 0,
+  },
+  headerLeft: { display: "flex", alignItems: "center", gap: 10 },
+  logoCircle: {
+    width: 26, height: 26, borderRadius: "50%", background: "#2A2E35",
+    display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0,
+  },
+  headerTitle: { fontWeight: 600, fontSize: 15, letterSpacing: "0.02em" },
+  headerActions: { display: "flex", alignItems: "center", gap: 14 },
+  headerBtn: { background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", opacity: 0.8 },
+  msgArea: {
+    flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column",
+    padding: "24px 16px 112px", scrollbarWidth: "none",
+  } as React.CSSProperties,
+  subtitle: { display: "flex", flexDirection: "column" as const, alignItems: "center", marginBottom: 24, textAlign: "center" as const },
+  subtitleText: { fontSize: 13, color: "#6b7280", lineHeight: 1.6, maxWidth: 320, textAlign: "center" as const },
+  msgList: { display: "flex", flexDirection: "column" as const, gap: 6, width: "100%", position: "relative" as const },
+  msgRowUser: { display: "flex", flexDirection: "column" as const, gap: 6, width: "100%", alignItems: "flex-end" },
+  msgRowBot: { display: "flex", flexDirection: "column" as const, gap: 6, width: "100%", alignItems: "flex-start" },
+  bubbleUser: {
+    padding: "8px 16px", borderRadius: 12, borderBottomRightRadius: 4,
+    fontSize: 15, width: "fit-content" as const, maxWidth: "88%", lineHeight: 1.375,
+    background: "#0D72FF", color: "#fff", overflow: "hidden",
+  },
+  bubbleBot: {
+    padding: "8px 16px", borderRadius: 12, borderBottomLeftRadius: 4,
+    fontSize: 15, width: "fit-content" as const, maxWidth: "88%", lineHeight: 1.375,
+    background: "#F0F2F5", color: "#1E1E1E", overflow: "hidden",
+  },
+  thinking: {
+    display: "flex", alignItems: "center", gap: 8,
+    padding: "8px 16px", borderRadius: 12, borderBottomLeftRadius: 4,
+    fontSize: 15, width: "fit-content" as const, maxWidth: "88%",
+    background: "#F0F2F5", color: "#9ca3af",
+  },
+  suggestions: { display: "flex", flexWrap: "wrap" as const, gap: 8, marginTop: 8, width: "100%" },
+  suggestBtn: {
+    background: "#EBF5FF", color: "#0D72FF", border: "none",
+    borderRadius: 10, padding: "8px 14px", fontSize: 14.5, fontWeight: 500,
+    cursor: "pointer", fontFamily: "inherit",
+    outline: "none",
+  },
+  inputWrap: {
+    position: "absolute" as const, bottom: 0, left: 0, right: 0,
+    padding: "48px 16px 16px",
+    background: "linear-gradient(to top, #fff 95%, transparent)",
+    pointerEvents: "none" as const,
+  },
+  inputBar: {
+    position: "relative" as const, display: "flex", alignItems: "center",
+    borderRadius: 9999, background: "#fff", border: "2px solid #e5e7eb",
+    pointerEvents: "auto" as const,
+  },
+  input: {
+    width: "100%", background: "transparent", border: "none", outline: "none",
+    color: "#111827", borderRadius: 9999,
+    padding: "10px 48px 10px 20px", fontSize: 15,
+    fontFamily: "inherit",
+  },
+  sendBtn: (active: boolean) => ({
+    position: "absolute" as const, top: "50%", transform: "translateY(-50%)", right: 5,
+    width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+    border: "none", cursor: active ? "pointer" : "not-allowed",
+    background: active ? "#0D72FF" : "#E5E5E5", color: active ? "#fff" : "#8C8C8C",
+    fontFamily: "inherit",
+    outline: "none",
+  }),
+  toggle: {
+    position: "fixed" as const, bottom: 24, right: 24, zIndex: 2147483646,
+    borderRadius: "50%", overflow: "hidden",
+    width: 40, height: 40,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+    border: "none", padding: 0, cursor: "pointer",
+    background: "transparent",
+    outline: "none",
+    transition: "transform 0.2s, box-shadow 0.2s",
+  },
+  toggleImg: { width: "100%", height: "100%", objectFit: "cover" as const },
+  mdRoot: {
+    margin: 0,
+  } as React.CSSProperties,
+};
 
-const STYLES = `
-.marno-chat-toggle {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 2147483646;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  transition: transform 0.2s, box-shadow 0.2s;
-  padding: 0;
-  background: transparent;
-}
-.marno-chat-toggle:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.3);
-}
-.marno-chat-toggle:active {
-  transform: scale(0.95);
-}
-.marno-chat-toggle img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.marno-chat-container {
-  position: fixed;
-  bottom: 84px;
-  right: 24px;
-  z-index: 2147483647;
-  width: 400px;
-  height: 640px;
-  max-height: calc(100vh - 120px);
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 15px;
-  color: #1e1e1e;
-}
-
-.marno-chat-header {
-  background: ${cfg.primaryColor};
-  color: #fff;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-.marno-chat-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.marno-chat-header-logo {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #2A2E35;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.marno-chat-header-logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.marno-chat-header-name {
-  font-weight: 600;
-  font-size: 15px;
-}
-.marno-chat-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.marno-chat-header-actions button {
-  background: none;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  opacity: 0.8;
-  transition: opacity 0.15s;
-}
-.marno-chat-header-actions button:hover {
-  opacity: 1;
-}
-
-.marno-chat-messages {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.marno-chat-messages::-webkit-scrollbar { display: none; }
-.marno-chat-messages { scrollbar-width: none; }
-
-.marno-chat-subtitle {
-  text-align: center;
-  color: #9ca3af;
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-
-.marno-chat-bubble {
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.5;
-  max-width: 85%;
-  word-wrap: break-word;
-}
-.marno-chat-bubble-user {
-  background: ${cfg.primaryColor};
-  color: #fff;
-  align-self: flex-end;
-  border-bottom-right-radius: 4px;
-}
-.marno-chat-bubble-bot {
-  background: #f3f4f6;
-  color: #1e1e1e;
-  align-self: flex-start;
-  border-bottom-left-radius: 4px;
-}
-.marno-chat-bubble p { margin: 0; }
-.marno-chat-bubble p + p { margin-top: 8px; }
-.marno-chat-bubble ul, .marno-chat-bubble ol { margin: 4px 0; padding-left: 20px; }
-.marno-chat-bubble strong { font-weight: 600; }
-
-.marno-chat-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #f3f4f6;
-  border-radius: 12px;
-  border-bottom-left-radius: 4px;
-  align-self: flex-start;
-  font-size: 14px;
-  color: #9ca3af;
-}
-@keyframes marno-spin { to { transform: rotate(360deg); } }
-.marno-chat-loading svg { animation: marno-spin 1s linear infinite; }
-
-.marno-chat-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-.marno-chat-suggestion {
-  background: #eff6ff;
-  color: ${cfg.primaryColor};
-  border: none;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.15s;
-  font-family: inherit;
-}
-.marno-chat-suggestion:hover {
-  background: #dbeafe;
-}
-
-.marno-chat-input-wrap {
-  padding: 12px 16px 16px;
-  background: linear-gradient(to top, #fff 80%, transparent);
-  position: relative;
-}
-.marno-chat-input-bar {
-  display: flex;
-  align-items: center;
-  border: 2px solid #e5e7eb;
-  border-radius: 999px;
-  background: #fff;
-  padding-left: 16px;
-}
-.marno-chat-input-bar:focus-within {
-  border-color: ${cfg.primaryColor};
-}
-.marno-chat-input-bar input {
-  flex: 1;
-  border: none;
-  outline: none;
-  padding: 10px 0;
-  font-size: 14px;
-  font-family: inherit;
-  background: transparent;
-  color: #1e1e1e;
-}
-.marno-chat-input-bar input::placeholder { color: #9ca3af; }
-.marno-chat-input-bar input:disabled { opacity: 0.6; }
-
-.marno-chat-send-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 4px;
-  cursor: pointer;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-.marno-chat-send-btn-active {
-  background: ${cfg.primaryColor};
-  color: #fff;
-}
-.marno-chat-send-btn-disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
-  cursor: not-allowed;
-}
-
-.marno-chat-footer {
-  text-align: center;
-  padding: 7px;
-  border-top: 1px solid #f3f4f6;
-  flex-shrink: 0;
-}
-.marno-chat-footer a {
-  color: ${cfg.primaryColor};
-  text-decoration: none;
-  font-size: 12px;
-  opacity: 0.7;
-}
-.marno-chat-footer a:hover { opacity: 1; }
-
-@media (max-width: 480px) {
-  .marno-chat-container {
-    width: calc(100vw - 16px);
-    right: 8px;
-    bottom: 80px;
-    height: calc(100vh - 120px);
-  }
-  .marno-chat-toggle {
-    right: 12px;
-    bottom: 20px;
-  }
-}
+const mdStyles = `
+.marno-md p { margin: 0; }
+.marno-md p:not(:last-child) { margin-bottom: 12px; }
+.marno-md ul, .marno-md ol { margin: 8px 0; padding-left: 20px; }
+.marno-md ul { list-style: disc; }
+.marno-md ol { list-style: decimal; }
+.marno-md strong { font-weight: 600; }
 `;
-
-// ── Default avatar SVG (when no logo provided) ─────────────────────────
-
-const DEFAULT_AVATAR = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="transform:translateY(1px)"><path d="M4 17V10A4 4 0 0 1 12 10V17M12 17V10A4 4 0 0 1 20 10V17"/></svg>`;
-
-// ── Widget Component ───────────────────────────────────────────────────
 
 function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: crypto.randomUUID(), role: "system", text: cfg.greetings[0] },
-    { id: crypto.randomUUID(), role: "system", text: cfg.greetings[1] },
+    { id: crypto.randomUUID(), role: "system", text: GREETING_1 },
+    { id: crypto.randomUUID(), role: "system", text: GREETING_2 },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [toggleHover, setToggleHover] = useState(false);
+  const [toggleActive, setToggleActive] = useState(false);
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    sessionIdRef.current = crypto.randomUUID();
-  }, []);
+  useEffect(() => { sessionIdRef.current = crypto.randomUUID(); }, []);
 
-  const sendMessage = async (textOverride?: string) => {
-    const text = (textOverride || inputValue).trim();
-    if (!text) return;
+  const handleSend = async (textOverride?: string) => {
+    const textToSend = textOverride || inputValue;
+    const trimmed = textToSend.trim();
+    if (!trimmed) return;
     if (!textOverride) setInputValue("");
-
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text };
-    setMessages(prev => [...prev, userMsg]);
+    const userMsgObj: Message = { id: crypto.randomUUID(), role: "user", text: trimmed };
+    setMessages((prev) => [...prev, userMsgObj]);
     setIsLoading(true);
-
     try {
-      const res = await fetch(cfg.webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: text, sessionId: sessionIdRef.current, slug: cfg.kbSlug }),
+      const res = await fetch(WEBHOOK_URL, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmed, sessionId: sessionIdRef.current, slug: KB_SLUG }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const responseText: string = data.response || "";
-
-      const modelId = crypto.randomUUID();
+      if (!res.ok) throw new Error(`Webhook returned ${res.status}`);
+      const resp = await res.json();
+      const responseText = resp.response || "";
+      const modelMessageId = crypto.randomUUID();
       setIsLoading(false);
-      setMessages(prev => [...prev, { id: modelId, role: "model", text: "" }]);
-
+      setMessages((prev) => [...prev, { id: modelMessageId, role: "model", text: "" }]);
       const chars = responseText.split("");
       let fullText = "";
       for (let i = 0; i < chars.length; i += 2) {
         fullText += chars[i] + (chars[i + 1] || "");
-        setMessages(prev =>
-          prev.map(m => (m.id === modelId ? { ...m, text: fullText } : m))
-        );
-        await new Promise(r => setTimeout(r, 10));
+        setMessages((prev) => prev.map((m) => (m.id === modelMessageId ? { ...m, text: fullText } : m)));
+        await new Promise((r) => setTimeout(r, 10));
       }
-    } catch (err) {
-      console.error("[MarnoWidget] send error:", err);
-      setMessages(prev => [
-        ...prev,
-        { id: crypto.randomUUID(), role: "model", text: "Sorry, I ran into an error. Please try again." },
-      ]);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "model", text: "I'm sorry, I encountered an error. Please check your connection or try again later." }]);
       setIsLoading(false);
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") sendMessage();
-  };
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") handleSend(); };
 
-  const reset = () => {
+  const handleReset = () => {
     setMessages([
-      { id: crypto.randomUUID(), role: "system", text: cfg.greetings[0] },
-      { id: crypto.randomUUID(), role: "system", text: cfg.greetings[1] },
+      { id: crypto.randomUUID(), role: "system", text: GREETING_1 },
+      { id: crypto.randomUUID(), role: "system", text: GREETING_2 },
     ]);
     setInputValue("");
     sessionIdRef.current = crypto.randomUUID();
   };
 
-  const isInputEmpty = !inputValue.trim();
+  const isInputEmpty = inputValue.trim().length === 0;
 
   return (
     <>
-      <style>{STYLES}</style>
+      <style>{mdStyles}</style>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            key="widget-panel"
-            className="marno-chat-container"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Header */}
-            <div className="marno-chat-header">
-              <div className="marno-chat-header-left">
-                <div className="marno-chat-header-logo">
-                  {cfg.brandLogo ? (
-                    <img src={cfg.brandLogo} alt={cfg.brandName} />
-                  ) : (
-                    <span dangerouslySetInnerHTML={{ __html: DEFAULT_AVATAR }} />
-                  )}
+            <div style={ss.panel}>
+              <div style={ss.header}>
+                <div style={ss.headerLeft}>
+                  <div style={ss.logoCircle}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: "translateY(1px)" }}>
+                      <path d="M4 17V10A4 4 0 0 1 12 10V17M12 17V10A4 4 0 0 1 20 10V17" />
+                    </svg>
+                  </div>
+                  <span style={ss.headerTitle}>Marno AI</span>
                 </div>
-                <span className="marno-chat-header-name">{cfg.brandName}</span>
+                <div style={ss.headerActions}>
+                  <button onClick={handleReset} style={ss.headerBtn} title="Reset chat"><RotateCw size={18} strokeWidth={2.5} /></button>
+                  <button onClick={() => setIsOpen(false)} style={ss.headerBtn}><X size={20} strokeWidth={2.5} /></button>
+                </div>
               </div>
-              <div className="marno-chat-header-actions">
-                <button onClick={reset} title="Reset chat">
-                  <RotateCw size={16} strokeWidth={2.5} />
-                </button>
-                <button onClick={() => setIsOpen(false)} title="Close">
-                  <X size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            </div>
 
-            {/* Messages */}
-            <div className="marno-chat-messages">
-              {cfg.subtitle && (
-                <p className="marno-chat-subtitle">{cfg.subtitle}</p>
-              )}
-              <AnimatePresence mode="popLayout" initial={true}>
-                {messages.map(msg => {
-                  const isUser = msg.role === "user";
-                  const isBot = msg.role === "model" || msg.role === "system";
-                  const parts = isUser
-                    ? [msg.text]
-                    : msg.text.split(/(?:\r?\n){2,}/).filter(t => t.trim().length > 0);
-                  if (parts.length === 0 && isBot) parts.push("");
-
-                  return (
-                    <React.Fragment key={msg.id}>
-                      {parts.map((part, i) => (
+              <div style={ss.msgArea}>
+                <div style={ss.subtitle}>
+                  <p style={ss.subtitleText}>Demo use free providers, expect slower replies.</p>
+                </div>
+                <div style={ss.msgList}>
+                  <AnimatePresence mode="popLayout" initial={true}>
+                    {messages.map((msg, index) => {
+                      const prevMsg = index > 0 ? messages[index - 1] : null;
+                      const isRoleChange = prevMsg && (prevMsg.role !== msg.role || (prevMsg.role === "system" && msg.role === "model"));
+                      const isUser = msg.role === "user";
+                      const isAi = msg.role === "model" || msg.role === "system";
+                      const parts = isUser ? [msg.text] : msg.text.split(/(?:\r?\n){2,}/).filter((t) => t.trim().length > 0);
+                      if (parts.length === 0 && isAi) parts.push("");
+                      return (
                         <motion.div
-                          key={`${msg.id}-${i}`}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className={`marno-chat-bubble ${isUser ? "marno-chat-bubble-user" : "marno-chat-bubble-bot"}`}
+                          layout={isUser ? true : "position"}
+                          key={msg.id}
+                          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                          transition={{ duration: 0.3, ease: "easeOut" }}
+                          style={{ marginTop: isRoleChange ? 12 : 0 }}
                         >
-                          {isBot ? (
-                            <ReactMarkdown remarkPlugins={[remarkBreaks]}>
-                              {part || " "}
-                            </ReactMarkdown>
-                          ) : (
-                            part
-                          )}
+                          <div style={isUser ? ss.msgRowUser : ss.msgRowBot}>
+                            {parts.map((part, pIdx) => (
+                              <motion.div
+                                layoutId={isUser && pIdx === 0 ? `suggestion-${msg.text}` : undefined}
+                                key={pIdx}
+                                style={isUser ? ss.bubbleUser : ss.bubbleBot}
+                              >
+                                <div className="marno-md">
+                                  <ReactMarkdown remarkPlugins={[remarkBreaks]}>{part || " "}</ReactMarkdown>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
                         </motion.div>
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
-                {isLoading && (
-                  <motion.div
-                    key="marno-loading"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="marno-chat-loading"
-                  >
-                    <Loader2 size={14} />
-                    <span>Thinking…</span>
-                  </motion.div>
-                )}
-                {!isLoading &&
-                  messages.length === 2 &&
-                  messages[0].role === "system" && (
-                    <motion.div
-                      key="marno-suggestions"
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="marno-chat-suggestions"
-                    >
-                      {cfg.suggestions.map(s => (
-                        <button
-                          key={s.prompt}
-                          className="marno-chat-suggestion"
-                          onClick={() => sendMessage(s.prompt)}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-              </AnimatePresence>
-              <div ref={messagesEndRef} />
-            </div>
+                      );
+                    })}
 
-            {/* Input */}
-            <div className="marno-chat-input-wrap">
-              <div className="marno-chat-input-bar">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={e => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Message…"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={() => sendMessage()}
-                  disabled={isInputEmpty || isLoading}
-                  className={`marno-chat-send-btn ${isInputEmpty || isLoading ? "marno-chat-send-btn-disabled" : "marno-chat-send-btn-active"}`}
-                >
-                  <ArrowUp size={16} strokeWidth={2.5} />
-                </button>
+                    {isLoading && (
+                      <motion.div layout key="loading-indicator" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }} transition={{ duration: 0.3, ease: "easeOut" }} style={{ marginTop: 12 }}>
+                        <div style={ss.thinking}><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /><span>Thinking...</span></div>
+                      </motion.div>
+                    )}
+
+                    {!isLoading && messages.length === 2 && messages[0].role === "system" && (
+                      <motion.div layout key="suggestions" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10, filter: "blur(4px)", transition: { duration: 0.15 } }} transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}>
+                        <div style={ss.suggestions}>
+                          {SUGGESTIONS.map((s) => (
+                            <motion.button layoutId={`suggestion-${s.prompt}`} key={s.prompt} onClick={() => handleSend(s.prompt)} style={ss.suggestBtn}>{s.label}</motion.button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div ref={messagesEndRef} />
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="marno-chat-footer">
-              <a href={cfg.poweredByUrl} target="_blank" rel="noopener noreferrer">
-                {cfg.poweredBy}
-              </a>
+              <div style={ss.inputWrap}>
+                <div style={ss.inputBar}>
+                  <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} placeholder="Message..." disabled={isLoading} style={ss.input} />
+                  <button onClick={() => handleSend()} disabled={isInputEmpty || isLoading} style={ss.sendBtn(!isInputEmpty && !isLoading)}><ArrowUp size={18} strokeWidth={2.5} /></button>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Toggle Button */}
       <button
-        className="marno-chat-toggle"
-        onClick={() => setIsOpen(prev => !prev)}
-        aria-label="Open chat"
+        onClick={() => setIsOpen(!isOpen)}
+        onMouseEnter={() => setToggleHover(true)}
+        onMouseLeave={() => { setToggleHover(false); setToggleActive(false); }}
+        onMouseDown={() => setToggleActive(true)}
+        onMouseUp={() => setToggleActive(false)}
+        style={{
+          ...ss.toggle,
+          transform: toggleActive ? "scale(0.95)" : toggleHover ? "scale(1.1) rotate(12deg)" : "scale(1)",
+          boxShadow: toggleHover ? "0 6px 20px rgba(0,0,0,0.35)" : "0 4px 12px rgba(0,0,0,0.25)",
+        }}
       >
-        <img
-          src={cfg.brandLogo || "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg"}
-          alt="Chat"
-        />
+        <img src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg" alt="Chat" style={ss.toggleImg} />
       </button>
     </>
   );
 }
 
-// ── Bootstrap ──────────────────────────────────────────────────────────
-
 function mount() {
-  if (document.getElementById("marno-widget-root")) return;
+  const fontLink = document.createElement("link");
+  fontLink.rel = "stylesheet";
+  fontLink.href = "https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&display=swap";
+  document.head.appendChild(fontLink);
+
   const root = document.createElement("div");
-  root.id = "marno-widget-root";
   document.body.appendChild(root);
   createRoot(root).render(React.createElement(ChatWidget));
 }
