@@ -177,6 +177,9 @@ const mdStyles = `
 .marno-md ul { list-style: disc; }
 .marno-md ol { list-style: decimal; }
 .marno-md strong { font-weight: 600; }
+#marno-widget-root, #marno-widget-root * {
+  font-family: 'Karla', ui-sans-serif, system-ui, sans-serif !important;
+}
 `;
 
 function ChatWidget() {
