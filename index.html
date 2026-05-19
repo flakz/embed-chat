@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marno Chat Widget — Demo</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f3ff; min-height: 100vh; }
+    .page { max-width: 720px; margin: 0 auto; padding: 80px 24px; }
+    .page h1 { font-size: 42px; font-weight: 700; background: linear-gradient(135deg, #0D72FF, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+    .page p { font-size: 17px; color: #6b7280; line-height: 1.6; margin-bottom: 12px; }
+    .page pre { background: #1f2937; color: #e5e7eb; padding: 20px 24px; border-radius: 12px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin-top: 24px; }
+    .page pre .key { color: #86efac; }
+    .page pre .str { color: #fbbf24; }
+    .page pre .cmt { color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Marno Chat Widget</h1>
+    <p>An embeddable AI chat widget for n8n webhooks. Drop one script tag and a config object — just like Voiceflow embeds.</p>
+    <p>Click the chat bubble in the bottom-right corner to try it.</p>
+    <pre><span class="cmt">&lt;!-- Widget Config --&gt;</span>
+&lt;<span class="key">script</span>&gt;
+  <span class="key">window</span>.MarnoChatConfig = {
+    webhookUrl: <span class="str">"https://your-n8n.com/webhook/chat"</span>,
+    brandName: <span class="str">"Your Brand"</span>,
+    brandLogo: <span class="str">"https://your-site.com/logo.png"</span>,
+    primaryColor: <span class="str">"#0D72FF"</span>,
+    suggestions: [
+      { label: <span class="str">"Get started"</span>, prompt: <span class="str">"How do I get started?"</span> },
+      { label: <span class="str">"Pricing"</span>,   prompt: <span class="str">"What are the pricing plans?"</span> },
+    ],
+    greetings: [
+      <span class="str">"Hi! I'm an AI assistant."</span>,
+      <span class="str">"How can I help you today?"</span>
+    ],
+    subtitle: <span class="str">"We typically reply within a minute"</span>,
+    poweredBy: <span class="str">"Powered by Your Brand"</span>,
+    poweredByUrl: <span class="str">"https://your-site.com"</span>
+  };
+&lt;/<span class="key">script</span>&gt;
+<span class="cmt">&lt;!-- Widget Script --&gt;</span>
+&lt;<span class="key">script</span> <span class="key">src</span>=<span class="str">"https://your-app.vercel.app/marno-chat-widget.js"</span>&gt;&lt;/<span class="key">script</span>&gt;</pre>
+  </div>
+
+  <script>
+    window.MarnoChatConfig = {
+      webhookUrl: "https://n8n.marno.pro/webhook/marno-chat",
+      brandName: "Marno AI",
+      brandLogo: "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/green.jpg",
+      primaryColor: "#0D72FF",
+      suggestions: [
+        { label: "Get started", prompt: "How do I get started?" },
+        { label: "Features", prompt: "What features do you offer?" },
+        { label: "Pricing", prompt: "What are the pricing plans?" },
+        { label: "Support", prompt: "I need help with something" }
+      ],
+      greetings: [
+        "Hi there! I'm an AI assistant trained on docs and help articles.",
+        "How can I help you today?"
+      ],
+      subtitle: "We typically reply within a minute",
+    };
+  </script>
+  <script src="/marno-chat-widget.js"></script>
+</body>
+</html>
